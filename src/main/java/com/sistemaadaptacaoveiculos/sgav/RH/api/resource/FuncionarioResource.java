@@ -1,5 +1,6 @@
 package com.sistemaadaptacaoveiculos.sgav.RH.api.resource;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,11 +16,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sistemaadaptacaoveiculos.sgav.RH.api.dto.AtualizaStatusDTO;
 import com.sistemaadaptacaoveiculos.sgav.RH.api.dto.FuncionarioDTO;
+import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.AdmissaoFuncionario;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.Departamento;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.Funcao;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.Funcionario;
+import com.sistemaadaptacaoveiculos.sgav.RH.model.enums.StatusFuncionario;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.exception.RegraNegocioException;
+
+import com.sistemaadaptacaoveiculos.sgav.RH.model.service.AdmisssaoFuncionarioService;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.service.DepartamentoService;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.service.FuncaoService;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.service.FuncionarioService;
@@ -34,6 +40,8 @@ public class FuncionarioResource {
 	private final FuncionarioService service;
 	private final DepartamentoService departamentoService;
 	private final FuncaoService funcaoService;
+	private final AdmisssaoFuncionarioService admissao;
+	
 	
 	
 	@GetMapping
@@ -73,6 +81,24 @@ public class FuncionarioResource {
 		
 		
 	}
+	@PutMapping("{id}/atualiza-status")
+	public ResponseEntity<?> atualizaStatus(@PathVariable("id") Long id, AtualizaStatusDTO dto ){
+		return service.obterPorId(id).map(entity -> {
+			StatusFuncionario statusFuncionario = StatusFuncionario.valueOf(dto.getStatus());
+			if(statusFuncionario == null) {
+				return ResponseEntity.badRequest().body("Não foi possível atualizar status do funcionario.");
+			}
+			try {
+				
+				entity.setStatus(statusFuncionario);
+				service.atualizar(entity);
+				return ResponseEntity.ok(entity);
+				
+			} catch(RegraNegocioException e) {
+				return ResponseEntity.badRequest().body(e.getMessage());
+			}
+		}).orElseGet(() -> new ResponseEntity<>("Funcionário não encontrado na base de dados.", HttpStatus.BAD_REQUEST));
+	}
 	
 	@GetMapping("{id}")
 	public ResponseEntity<?> obterFuncionario(@PathVariable("id") Long id){
@@ -88,6 +114,16 @@ public class FuncionarioResource {
 				Funcionario entidade = converter(dto);
 				service.validarCpf(entidade.getCpf());
 				entidade = service.salvar(entidade);
+				
+				
+				AdmissaoFuncionario addFuncionario = AdmissaoFuncionario.builder()
+																		.dataAdmissao(new Date())
+																		.dataDemissao(null)
+																		.funcionario(entidade)
+																		.funcao(entidade.getFuncao())
+																		.build();
+																																				
+				admissao.admitir(addFuncionario);
 				return new ResponseEntity<>(entidade, HttpStatus.CREATED);
 				
 			}
@@ -134,7 +170,9 @@ public class FuncionarioResource {
 							 .celular(funcionario.getCelular())
 							 .departamento(funcionario.getDepartamento().getId())
 							 .funcao(funcionario.getFuncao().getId())
+							 .status(funcionario.getStatus().name())
 							 .build();
+							 
 					
 	}
 	
@@ -156,8 +194,39 @@ public class FuncionarioResource {
 		
 		funcionario.setFuncao(funcao);
 		
+				
+		if(dto.getStatus() != null) {
+			funcionario.setStatus(StatusFuncionario.valueOf(dto.getStatus()));
+		}
+		
 		return funcionario;		
 	}
+	
+	@PutMapping("{cpf}/demitir-funcionario")
+	public ResponseEntity<?> demitirFuncionario(@PathVariable("cpf") String cpf){
+		
+		return service.obterPorCpf(cpf).map(entity -> {
+			StatusFuncionario statusFuncionario = StatusFuncionario.INATIVO;
+			if(statusFuncionario == null) {
+				return ResponseEntity.badRequest().body("Não foi possível atualizar status do funcionário..");
+			}
+			try {
+				entity.setStatus(statusFuncionario);
+				service.atualizar(entity);
+				Optional<AdmissaoFuncionario> funcdmitido = admissao.obterPorId(entity.getId());
+				AdmissaoFuncionario funcionarioDemitir = funcdmitido.get();
+				funcionarioDemitir.setDataDemissao(new Date());
+				admissao.demitir(funcionarioDemitir);
+				return ResponseEntity.ok(entity);
+				
+				
+			} catch (RegraNegocioException e) {
+				return ResponseEntity.badRequest().body(e.getMessage());
+			}
+		}).orElseGet(() -> 
+					new ResponseEntity<>("Funcionário não encontrado na base de dados.", HttpStatus.BAD_REQUEST));
+	}
+	
 	
 
 }

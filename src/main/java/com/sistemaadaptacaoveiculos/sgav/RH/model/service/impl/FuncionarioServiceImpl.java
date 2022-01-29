@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.Funcionario;
+import com.sistemaadaptacaoveiculos.sgav.RH.model.enums.StatusFuncionario;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.exception.RegraNegocioException;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.repository.FuncionarioRepository;
 import com.sistemaadaptacaoveiculos.sgav.RH.model.service.FuncionarioService;
@@ -22,15 +23,18 @@ public class FuncionarioServiceImpl implements FuncionarioService{
 	FuncionarioRepository repository;
 	
 	
+	
 	public FuncionarioServiceImpl(FuncionarioRepository repository) {
 		super();
 		this.repository = repository;
+		
 	}
 
 	@Override
 	@Transactional
 	public Funcionario salvar(Funcionario funcionario) {
-		validar(funcionario);		
+		validar(funcionario);
+		funcionario.setStatus(StatusFuncionario.ATIVO);
 		return repository.save(funcionario);
 	}
 
@@ -71,7 +75,7 @@ public class FuncionarioServiceImpl implements FuncionarioService{
 		if(funcionario.getFuncao() == null || funcionario.getFuncao().getId() == null) {
 			throw new RegraNegocioException("Informe a função");
 		}
-		
+				
 		
 		
 	}
@@ -104,9 +108,13 @@ public class FuncionarioServiceImpl implements FuncionarioService{
 		
 	}
 
-	
+	@Override
+	public void atualizaStatus(Funcionario funcionario, StatusFuncionario status) {
+		funcionario.setStatus(status);
+		atualizar(funcionario);
+		
+	}
 
-	
-	
+		
 	
 }

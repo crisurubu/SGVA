@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.sistemaadaptacaoveiculos.sgav.RH.model.entidades.Funcionario;
+import com.sistemaadaptacaoveiculos.sgav.RH.model.enums.StatusFuncionario;
 
 public interface FuncionarioService {
 	
@@ -16,5 +17,6 @@ public interface FuncionarioService {
 	Optional<Funcionario> obterPorId(Long id);
 	List<Funcionario> buscar(Funcionario funcionario);
 	void validarCpf(String cpf);
-
+	void atualizaStatus(Funcionario funcionario, StatusFuncionario status);
+	
 }

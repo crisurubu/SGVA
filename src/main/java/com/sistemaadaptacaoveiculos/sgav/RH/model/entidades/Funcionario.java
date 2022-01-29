@@ -2,12 +2,16 @@ package com.sistemaadaptacaoveiculos.sgav.RH.model.entidades;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+
+import com.sistemaadaptacaoveiculos.sgav.RH.model.enums.StatusFuncionario;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,9 +47,11 @@ public class Funcionario {
 	@JoinColumn(name = "id_funcao")
 	private Funcao funcao;
 	
+	@Column(name = "statusFuncionario")
+	@Enumerated(value = EnumType.STRING)
+	private StatusFuncionario status;
 	
 	
-	
-	
+		
 
 }

@@ -20,6 +20,7 @@ public class FuncionarioDTO {
 	private String celular;
 	private Long departamento;
 	private Long funcao;
-	
+	private String status;
+	private Long admissao;
 
 }
